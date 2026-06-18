@@ -1,5 +1,7 @@
 'use strict';
 
+import { StickmanFraudAgent, formatFraudAlert } from './fraud-agent.mjs';
+
 // Prime utilities (inlined — service workers can't import from webapp/)
 function isPrime(n) {
   if (n < 2) return false;
@@ -19,13 +21,18 @@ function nextPrime(n) {
 let state = {
   tick: 0,
   activeProcess: 'idle',
+  fraudReport: null,
   log: [],
   connectors: {
     phone: { status: 'idle', data: 'No data yet' },
     car:   { status: 'idle', data: null },
     web:   { status: 'active', data: null },
+    fraud: { status: 'active', data: null },
   },
 };
+
+const fraudAgent = new StickmanFraudAgent();
+let lastFraudNotificationAt = 0;
 
 const MOCK_NOTIFS = [
   'Maps: Turn in 300m',
@@ -33,6 +40,8 @@ const MOCK_NOTIFS = [
   'Weather: Rain tonight',
   'Calendar: Standup in 10 min',
   'Slack: @mention in #product',
+  'Bank Alert: Verify your account password immediately at http://secure-bank-login.zip',
+  'Delivery Notice: Package held. Pay customs fee with gift card within 24 hours.',
 ];
 
 const MOCK_CAR = () => ({
@@ -53,6 +62,47 @@ function addLog(name, interval, tick) {
   broadcast({ type: 'process', ...entry });
 }
 
+function buildFraudContext(extra = {}) {
+  return {
+    ...(state.connectors.web.data || {}),
+    notification: state.connectors.phone.data,
+    ...extra,
+  };
+}
+
+function notifyFraud(report) {
+  const now = Date.now();
+  if (!report.shouldAlert || now - lastFraudNotificationAt < 60000) return;
+  lastFraudNotificationAt = now;
+
+  chrome.notifications.create(`stickman-fraud-${now}`, {
+    type: 'basic',
+    iconUrl: chrome.runtime.getURL('icon128.png'),
+    title: `STICKMAN Fraud ${report.level.toUpperCase()}`,
+    message: `${report.score}/100 - ${report.summary}`,
+    priority: report.level === 'critical' ? 2 : 1,
+  }, () => void chrome.runtime.lastError);
+}
+
+function updateFraud(source, extra = {}, options = {}) {
+  const report = fraudAgent.scan(buildFraudContext(extra));
+  const status = report.shouldAlert ? 'alert' : (report.level === 'watch' ? 'scanning' : 'active');
+  const data = { ...report, source };
+
+  state.fraudReport = data;
+  state.connectors.fraud = { status, data };
+
+  broadcast({ type: 'connector-update', connector: 'fraud', status, data });
+  if (report.shouldAlert && !options.quiet) {
+    const text = formatFraudAlert(report);
+    broadcast({ type: 'log-line', text });
+    broadcast({ type: 'fraud-alert', report: data });
+    notifyFraud(report);
+  }
+
+  return data;
+}
+
 // ── Prime process runners ──────────────────────────────────────────────────────
 
 function runHeartbeat() {
@@ -70,6 +120,7 @@ function runNotifyScan() {
   const notif = MOCK_NOTIFS[Math.floor(Math.random() * MOCK_NOTIFS.length)];
   state.connectors.phone = { status: 'scanning', data: notif };
   broadcast({ type: 'connector-update', connector: 'phone', status: 'scanning', data: notif });
+  updateFraud('phone notification', { notification: notif });
   setTimeout(() => {
     state.connectors.phone.status = 'active';
     broadcast({ type: 'connector-update', connector: 'phone', status: 'active', data: notif });
@@ -86,6 +137,7 @@ function runWebScan() {
       const data = ctx || { url: tabs[0].url, title: tabs[0].title };
       state.connectors.web = { status: 'active', data };
       broadcast({ type: 'connector-update', connector: 'web', status: 'active', data });
+      updateFraud('web page', data);
     });
   });
 }
@@ -104,11 +156,13 @@ function runDecision() {
   state.activeProcess = 'decision';
   addLog('decision', 11000, state.tick);
   const prime = isPrime(state.tick);
+  const fraud = updateFraud('prime decision');
   broadcast({
     type: 'decision-result',
     tick: state.tick,
     isPrime: prime,
     nextPrime: nextPrime(state.tick),
+    fraud,
   });
 }
 
