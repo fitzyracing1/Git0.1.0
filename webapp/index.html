@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STICKMAN // PRIME ROBOT</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <span class="logo">STICKMAN</span>
+    <span class="subtitle">PRIME NUMBER ROBOT &middot; v0.1.0</span>
+    <span class="tick-counter" id="tick-display">TICK: 0</span>
+  </header>
+
+  <main>
+
+    <!-- Left: Robot visualization + prime bars -->
+    <aside class="robot-panel">
+      <svg id="stickman-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="state-badge" id="state-badge">IDLE</div>
+      <div class="prime-bars">
+        <div class="prime-bar-row">
+          <span>2s HEARTBEAT</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-2"></div></div>
+        </div>
+        <div class="prime-bar-row">
+          <span>3s NOTIFY</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-3"></div></div>
+        </div>
+        <div class="prime-bar-row">
+          <span>5s WEB</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-5"></div></div>
+        </div>
+        <div class="prime-bar-row">
+          <span>7s CAR</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-7"></div></div>
+        </div>
+        <div class="prime-bar-row">
+          <span>11s DECIDE</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-11"></div></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center: Activity log -->
+    <section class="log-panel">
+      <div class="panel-title">// ACTIVITY LOG</div>
+      <div class="log-scroll" id="log"></div>
+    </section>
+
+    <!-- Right: Connector status -->
+    <aside class="connectors-panel">
+      <div class="panel-title">// CONNECTORS</div>
+
+      <div class="connector-card">
+        <div class="conn-header">
+          <span class="conn-name">PHONE &middot; NOTIFICATIONS</span>
+          <span class="conn-dot" id="dot-phone"></span>
+        </div>
+        <div class="conn-data" id="data-phone">Awaiting scan at 3s&hellip;</div>
+      </div>
+
+      <div class="connector-card">
+        <div class="conn-header">
+          <span class="conn-name">CAR &middot; OBD-II DATA</span>
+          <span class="conn-dot" id="dot-car"></span>
+        </div>
+        <div class="conn-data" id="data-car">Polling at 7s interval&hellip;</div>
+      </div>
+
+      <div class="connector-card">
+        <div class="conn-header">
+          <span class="conn-name">WEB &middot; PAGE CONTEXT</span>
+          <span class="conn-dot active" id="dot-web"></span>
+        </div>
+        <div class="conn-data" id="data-web">Reading page&hellip;</div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Bottom: Chat -->
+  <div class="chat-area">
+    <div class="chat-log" id="chat-log"></div>
+    <div class="chat-input-row">
+      <input id="chat-input" type="text"
+        placeholder="Message Stickman&hellip; (try a number, or type help)"
+        autocomplete="off" spellcheck="false">
+      <button id="chat-send">SEND</button>
+    </div>
+  </div>
+
+  <script src="primes.js"></script>
+  <script src="stickman.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 300px;
+      min-height: 440px;
+      background: #080b10;
+      color: #00ff88;
+      font-family: 'Courier New', Consolas, monospace;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #0a0f18;
+      border-bottom: 1px solid #00ff8820;
+    }
+    .logo { font-size: 15px; letter-spacing: 4px; text-shadow: 0 0 10px #00ff88; }
+    .tick { font-size: 9px; color: #00ff8855; letter-spacing: 1px; }
+
+    .robot-row {
+      display: flex;
+      justify-content: center;
+      background: #0a0f14;
+      padding: 10px 0 6px;
+      border-bottom: 1px solid #00ff8810;
+    }
+
+    .state-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 14px;
+      border-bottom: 1px solid #00ff8810;
+    }
+    .state-key  { font-size: 9px; letter-spacing: 1px; color: #00ff8855; }
+    .state-val  { font-size: 11px; color: #00ffcc; letter-spacing: 1px; }
+
+    .processes  { padding: 8px 14px; border-bottom: 1px solid #00ff8810; }
+    .proc-title { font-size: 8px; letter-spacing: 2px; color: #00ff8840; margin-bottom: 6px; }
+    .proc-row   { display: flex; align-items: center; justify-content: space-between; padding: 2px 0; }
+    .proc-name  { font-size: 9px; color: #00ff8866; }
+    .proc-time  { font-size: 9px; color: #b0ffcc; }
+    .proc-dot   {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: #00ff88; flex-shrink: 0;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .log-mini   { flex: 1; overflow-y: auto; padding: 6px 14px; }
+    .log-mini::-webkit-scrollbar { width: 2px; }
+    .log-mini::-webkit-scrollbar-thumb { background: #00ff8820; }
+    .log-item   { padding: 2px 0; border-bottom: 1px solid #00ff8806; font-size: 9px; color: #b0ffcc; line-height: 1.5; }
+    .log-item .tag { color: #00ff88; margin-right: 4px; }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      border-top: 1px solid #00ff8814;
+      background: #0a0f18;
+    }
+    .open-btn {
+      background: transparent;
+      border: 1px solid #00ff8830;
+      color: #00ff88;
+      font-family: inherit;
+      font-size: 8px;
+      letter-spacing: 1.5px;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+    .open-btn:hover { background: #00ff8812; }
+    .version { font-size: 8px; color: #00ff8830; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <span class="logo">STICKMAN</span>
+    <span class="tick" id="tick-label">TICK: 0</span>
+  </div>
+
+  <div class="robot-row">
+    <svg id="mini-svg" width="100" height="110" viewBox="0 0 200 220"
+         xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div class="state-row">
+    <span class="state-key">STATE</span>
+    <span class="state-val" id="state-val">IDLE</span>
+  </div>
+
+  <div class="processes">
+    <div class="proc-title">// PRIME PROCESSES</div>
+    <div class="proc-row"><span class="proc-name">2s  HEARTBEAT</span><span class="proc-time" id="pt-2">–</span><div class="proc-dot" id="pd-2"></div></div>
+    <div class="proc-row"><span class="proc-name">3s  NOTIFY</span>   <span class="proc-time" id="pt-3">–</span><div class="proc-dot" id="pd-3"></div></div>
+    <div class="proc-row"><span class="proc-name">5s  WEB</span>      <span class="proc-time" id="pt-5">–</span><div class="proc-dot" id="pd-5"></div></div>
+    <div class="proc-row"><span class="proc-name">7s  CAR</span>      <span class="proc-time" id="pt-7">–</span><div class="proc-dot" id="pd-7"></div></div>
+    <div class="proc-row"><span class="proc-name">11s DECIDE</span>   <span class="proc-time" id="pt-11">–</span><div class="proc-dot" id="pd-11"></div></div>
+  </div>
+
+  <div class="log-mini" id="log-mini">
+    <div class="log-item"><span class="tag">[INIT]</span>Connecting to prime processes…</div>
+  </div>
+
+  <div class="footer">
+    <button class="open-btn" id="open-btn">OPEN IN TAB</button>
+    <span class="version">v0.1.0</span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
