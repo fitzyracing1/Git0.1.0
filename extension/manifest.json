@@ -1,11 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Stickman Prime Robot",
-  "version": "0.1.0",
-  "description": "STICKMAN monitors your browser at prime intervals (2s, 3s, 5s, 7s, 11s) and surfaces phone notifications, car data, and page context.",
+  "name": "Stickman Fraud Alert Robot",
+  "version": "0.2.0",
+  "description": "STICKMAN monitors your browser at prime intervals (2s, 3s, 5s, 7s, 11s) and alerts users to possible fraud in notifications and page context.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Stickman Prime Robot"
+    "default_title": "Stickman Fraud Alert Robot",
+    "default_icon": "icon128.png"
+  },
+  "icons": {
+    "128": "icon128.png"
   },
   "background": {
     "service_worker": "background.js",

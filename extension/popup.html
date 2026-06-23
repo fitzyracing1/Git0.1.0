@@ -54,6 +54,13 @@
       transition: background 0.2s, box-shadow 0.2s;
     }
 
+    .fraud-panel { padding: 8px 14px; border-bottom: 1px solid #00ff8810; background: #0c1018; }
+    .fraud-head  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+    .fraud-title { font-size: 8px; letter-spacing: 2px; color: #ff8844; }
+    .fraud-level { font-size: 10px; letter-spacing: 1px; color: #00ffcc; }
+    .fraud-data  { font-size: 9px; line-height: 1.45; color: #b0ffcc; white-space: pre-line; }
+    .fraud-data.alert { color: #ffaaaa; }
+
     .log-mini   { flex: 1; overflow-y: auto; padding: 6px 14px; }
     .log-mini::-webkit-scrollbar { width: 2px; }
     .log-mini::-webkit-scrollbar-thumb { background: #00ff8820; }
@@ -107,13 +114,21 @@
     <div class="proc-row"><span class="proc-name">11s DECIDE</span>   <span class="proc-time" id="pt-11">–</span><div class="proc-dot" id="pd-11"></div></div>
   </div>
 
+  <div class="fraud-panel">
+    <div class="fraud-head">
+      <span class="fraud-title">// FRAUD GUARD</span>
+      <span class="fraud-level" id="fraud-level">CLEAR</span>
+    </div>
+    <div class="fraud-data" id="fraud-data">Awaiting first scan...</div>
+  </div>
+
   <div class="log-mini" id="log-mini">
     <div class="log-item"><span class="tag">[INIT]</span>Connecting to prime processes…</div>
   </div>
 
   <div class="footer">
     <button class="open-btn" id="open-btn">OPEN IN TAB</button>
-    <span class="version">v0.1.0</span>
+    <span class="version">v0.2.0</span>
   </div>
 
   <script src="popup.js"></script>

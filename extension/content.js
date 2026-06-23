@@ -9,6 +9,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       selectedText:    window.getSelection().toString().substring(0, 300),
       metaDescription: document.querySelector('meta[name="description"]')?.content || '',
       h1:              document.querySelector('h1')?.textContent?.trim() || '',
+      bodyText:        document.body?.innerText?.replace(/\s+/g, ' ').trim().substring(0, 1200) || '',
       linkCount:       document.querySelectorAll('a').length,
       imageCount:      document.querySelectorAll('img').length,
     });
