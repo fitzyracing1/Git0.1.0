@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STICKMAN // PRIME ROBOT</title>
+  <title>STICKMAN // FRAUD ALERT ROBOT</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <header class="topbar">
     <span class="logo">STICKMAN</span>
-    <span class="subtitle">PRIME NUMBER ROBOT &middot; v0.1.0</span>
+    <span class="subtitle">PRIME FRAUD ALERT ROBOT &middot; v0.2.0</span>
     <span class="tick-counter" id="tick-display">TICK: 0</span>
   </header>
 
@@ -77,6 +77,14 @@
         </div>
         <div class="conn-data" id="data-web">Reading page&hellip;</div>
       </div>
+
+      <div class="connector-card">
+        <div class="conn-header">
+          <span class="conn-name">FRAUD &middot; USER ALERTS</span>
+          <span class="conn-dot active" id="dot-fraud"></span>
+        </div>
+        <div class="conn-data" id="data-fraud">Fraud guard warming up&hellip;</div>
+      </div>
     </aside>
 
   </main>
@@ -93,6 +101,7 @@
   </div>
 
   <script src="primes.js"></script>
+  <script src="fraud-agent.js"></script>
   <script src="stickman.js"></script>
   <script src="app.js"></script>
 </body>

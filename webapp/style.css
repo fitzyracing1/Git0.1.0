@@ -203,6 +203,7 @@ main {
 .log-tag.web-scan    { color: var(--yellow); border: 1px solid #ffcc0033; }
 .log-tag.car-check   { color: var(--blue);   border: 1px solid #88aaff33; }
 .log-tag.decision    { color: var(--orange); border: 1px solid #ff884433; }
+.log-tag.fraud-scan  { color: var(--red);    border: 1px solid #ff333355; background: #ff333310; }
 
 .log-msg { color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

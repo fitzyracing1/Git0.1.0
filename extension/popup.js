@@ -14,7 +14,7 @@ const STATE_LABELS = {
   'notify-scan': 'SCANNING',
   'web-scan':    'THINKING',
   'car-check':   'WALKING',
-  'decision':    'ALERT',
+  'decision':    'FRAUD DECISION',
 };
 
 // ── Mini stickman animation ───────────────────────────────────────────────────
@@ -67,6 +67,21 @@ function addLog(name, text) {
   while (log.children.length > 30) log.removeChild(log.firstChild);
 }
 
+function updateFraudPanel(report) {
+  if (!report) return;
+  const level = document.getElementById('fraud-level');
+  const data = document.getElementById('fraud-data');
+  const isAlert = report.level === 'warning' || report.level === 'critical';
+
+  level.textContent = report.level.toUpperCase();
+  level.style.color = isAlert ? '#ff3333' : (report.level === 'watch' ? '#ffcc00' : '#00ffcc');
+  data.className = `fraud-data${isAlert ? ' alert' : ''}`;
+  data.textContent =
+    `Score:  ${report.score}/100\n` +
+    `Source: ${report.source || 'prime process'}\n` +
+    `Signal: ${report.summary}`;
+}
+
 // ── Process event handler ─────────────────────────────────────────────────────
 
 function onProcess(msg) {
@@ -104,6 +119,7 @@ buildMiniRobot();
 chrome.runtime.sendMessage({ type: 'get-state' }, (state) => {
   if (!state) return;
   document.getElementById('tick-label').textContent = `TICK: ${state.tick}`;
+  updateFraudPanel(state.fraudReport);
   for (const entry of (state.log || []).slice(0, 8).reverse()) {
     addLog(entry.name, `interval ${entry.interval}ms · tick #${entry.tick}`);
   }
@@ -112,6 +128,12 @@ chrome.runtime.sendMessage({ type: 'get-state' }, (state) => {
 // Listen for live updates
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'process') onProcess(msg);
+  if (msg.type === 'connector-update' && msg.connector === 'fraud') updateFraudPanel(msg.data);
+  if (msg.type === 'decision-result' && msg.fraud) updateFraudPanel(msg.fraud);
+  if (msg.type === 'fraud-alert') {
+    updateFraudPanel(msg.report);
+    addLog('fraud', `ALERT ${msg.report.level.toUpperCase()} · score ${msg.report.score}/100`);
+  }
 });
 
 // Open popup in a full tab for more screen space

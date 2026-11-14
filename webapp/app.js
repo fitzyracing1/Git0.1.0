@@ -6,6 +6,7 @@ const PROCESS_COLORS = {
   'web-scan':    '#ffcc00',
   'car-check':   '#88aaff',
   'decision':    '#ff8844',
+  'fraud-scan':  '#ff3333',
 };
 
 const BAR_MAP = {
@@ -31,6 +32,8 @@ const MOCK_NOTIFS = [
   'Slack: @mention in #general',
   'Reminder: Pick up groceries',
   'News: Markets up 1.2%',
+  'Bank Alert: Verify your account password immediately at http://secure-bank-login.zip',
+  'Delivery Notice: Package held. Pay customs fee with gift card within 24 hours.',
 ];
 
 const MOCK_CAR = () => ({
@@ -41,6 +44,10 @@ const MOCK_CAR = () => ({
 });
 
 let robot;
+let fraudAgent;
+let lastFraudReport;
+let currentPhoneNotification = '';
+let currentWebContext = {};
 
 // ── Logging ──────────────────────────────────────────────────────────────────
 
@@ -63,7 +70,8 @@ function log(processName, message) {
 function setStateBadge(processName) {
   const labels = {
     idle: 'IDLE', heartbeat: 'PULSE', 'notify-scan': 'SCANNING',
-    'web-scan': 'THINKING', 'car-check': 'WALKING', decision: 'ALERT',
+    'web-scan': 'THINKING', 'car-check': 'WALKING', decision: 'FRAUD DECISION',
+    'fraud-scan': 'FRAUD ALERT',
   };
   const badge = document.getElementById('state-badge');
   badge.textContent = labels[processName] || processName.toUpperCase();
@@ -97,12 +105,48 @@ function setConnData(id, text) {
   if (el) el.textContent = text;
 }
 
+function buildFraudContext(extra) {
+  return {
+    url: window.location.href,
+    title: document.title,
+    notification: currentPhoneNotification,
+    h1: document.querySelector('h1')?.textContent?.trim() || '',
+    metaDescription: document.querySelector('meta[name="description"]')?.content || '',
+    selectedText: window.getSelection().toString().substring(0, 300),
+    ...currentWebContext,
+    ...(extra || {}),
+  };
+}
+
+function setFraudPanel(report, source) {
+  const dotClass = report.shouldAlert ? 'alert' : (report.level === 'watch' ? 'scanning' : 'active');
+  setDot('dot-fraud', dotClass);
+  setConnData('data-fraud',
+    `Level:  ${report.level.toUpperCase()}\n` +
+    `Score:  ${report.score}/100\n` +
+    `Source: ${source}\n` +
+    `Signal: ${report.summary}`);
+}
+
+function runFraudScan(source, extra, options) {
+  if (!fraudAgent) return null;
+  const report = fraudAgent.scan(buildFraudContext(extra));
+  lastFraudReport = report;
+  setFraudPanel(report, source);
+  if (report.shouldAlert && !(options && options.quiet)) {
+    log('fraud-scan', formatStickmanFraudAlert(report));
+  }
+  return report;
+}
+
 function updateConnectors(processName) {
   switch (processName) {
     case 'notify-scan': {
       setDot('dot-phone', 'scanning');
       const n = MOCK_NOTIFS[Math.floor(Math.random() * MOCK_NOTIFS.length)];
+      currentPhoneNotification = n;
       setConnData('data-phone', n);
+      runFraudScan('phone notification', { notification: n });
       setTimeout(() => setDot('dot-phone', 'active'), 950);
       break;
     }
@@ -115,15 +159,19 @@ function updateConnectors(processName) {
       break;
     }
     case 'web-scan': {
+      currentWebContext = { url: window.location.href, title: document.title };
       setConnData('data-web', `URL:   ${window.location.href}\nTitle: ${document.title}`);
+      runFraudScan('web page', currentWebContext);
       break;
     }
     case 'decision': {
       setDot('dot-phone', 'alert');
       setDot('dot-car', 'alert');
+      setDot('dot-fraud', lastFraudReport?.shouldAlert ? 'alert' : 'active');
       setTimeout(() => {
         setDot('dot-phone', 'active');
         setDot('dot-car', 'active');
+        setDot('dot-fraud', lastFraudReport?.shouldAlert ? 'alert' : 'active');
       }, 2400);
       break;
     }
@@ -151,7 +199,11 @@ function buildLogMsg(processName, tick) {
       return `Car OBD-II: ${c.speed}mph · ${c.battery}% battery · tick ${tick} is ${isPrime(tick) ? 'PRIME ✓' : 'composite'}`;
     }
     case 'decision':
-      return `Decision cycle · tick ${tick} → confidence: ${isPrime(tick) ? 100 : Math.floor((tick / np) * 100)}% · next prime: ${np}`;
+      const report = runFraudScan('prime decision', {}, { quiet: true });
+      if (report?.shouldAlert) {
+        return `Decision cycle · FRAUD ${report.level.toUpperCase()} · score ${report.score}/100 · ${report.summary}`;
+      }
+      return `Decision cycle · fraud clear · score ${report?.score || 0}/100 · next prime: ${np}`;
     default:
       return `Process fired: ${processName}`;
   }
@@ -172,10 +224,16 @@ function stickmanReply(text) {
 
   const lower = t.toLowerCase();
   if (lower === 'help' || lower === '?') {
-    return 'I run 5 prime-timed processes: 2s=heartbeat · 3s=phone scan · 5s=web context · 7s=car data · 11s=decision. Send a number to analyze it.';
+    return 'I run 5 prime-timed processes: 2s=heartbeat · 3s=phone scan · 5s=web context · 7s=car data · 11s=fraud decision. Send a number, type status, or ask for a fraud scan.';
+  }
+  if (lower.includes('fraud') || lower.includes('scam') || lower.includes('phish')) {
+    robot.triggerProcess('decision');
+    const report = runFraudScan('chat request', { message: t });
+    return formatStickmanFraudAlert(report);
   }
   if (lower.includes('status')) {
-    return `Tick ${robot.tickCount}. State: ${robot.activeState || 'IDLE'}. All ${robot.processes.length} prime processes running.`;
+    const fraud = lastFraudReport ? `${lastFraudReport.level.toUpperCase()} ${lastFraudReport.score}/100` : 'not scanned yet';
+    return `Tick ${robot.tickCount}. State: ${robot.activeState || 'IDLE'}. Fraud guard: ${fraud}. All ${robot.processes.length} prime processes running.`;
   }
   if (lower.includes('scan')) {
     robot.triggerProcess('notify-scan');
@@ -187,8 +245,8 @@ function stickmanReply(text) {
   }
   const pool = [
     `Tick ${robot.tickCount} — ${isPrime(robot.tickCount) ? 'that\'s a prime tick!' : `next prime tick: ${nextPrime(robot.tickCount)}`}.`,
-    'Prime intervals 2, 3, 5, 7, 11 all nominal.',
-    'Connectors online. Monitoring for events.',
+    'Prime intervals 2, 3, 5, 7, 11 all nominal. Fraud guard is watching page and notification signals.',
+    'Connectors online. Monitoring for fraud events.',
     `Prime factors of ${robot.tickCount}: [${primeFactors(robot.tickCount || 2).join(', ') || 'prime'}].`,
   ];
   return pool[robot.tickCount % pool.length];
@@ -223,6 +281,7 @@ function initChat() {
 
 document.addEventListener('DOMContentLoaded', () => {
   const svg = document.getElementById('stickman-svg');
+  fraudAgent = new StickmanFraudAgent();
 
   robot = new StickmanRobot(svg, (processName, interval, tick) => {
     document.getElementById('tick-display').textContent = `TICK: ${tick}`;
@@ -234,15 +293,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Web connector initial state
+  currentWebContext = { url: window.location.href, title: document.title };
   setConnData('data-web', `URL:   ${window.location.href}\nTitle: ${document.title}`);
   setDot('dot-web', 'active');
+  runFraudScan('startup', currentWebContext, { quiet: true });
 
   requestAnimationFrame(animateBars);
 
-  log('heartbeat', 'STICKMAN online · prime processes initializing at intervals 2, 3, 5, 7, 11…');
+  log('heartbeat', 'STICKMAN online · fraud-alert agent armed · prime processes initializing at intervals 2, 3, 5, 7, 11…');
 
   initChat();
   setTimeout(() => addChatMsg(
     'Online. Prime processes active at 2s · 3s · 5s · 7s · 11s intervals. ' +
-    'Send a number or type "help".', 'bot'), 600);
+    'Fraud guard is watching notifications and page context. Send a number or type "help".', 'bot'), 600);
 });
